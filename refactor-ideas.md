@@ -4,7 +4,7 @@
 
 ### Identified Issues
 
-1.
+1. While simple code, hard to read: no named functions
 
 ### Refactor Tasks/Ideas
 

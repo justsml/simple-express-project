@@ -1,36 +1,34 @@
 const router = module.exports = require('express').Router()
+const {createOrUpdate, read, remove} = require('../lib/book')
 
-router.get('/', (req, res) => {
-  return knex('book')
-  .where({title: new RegExp(req.query.title + '.*', 'i')})
+router.get('/', read)
+router.put('/:id?', checkLogin, createOrUpdate)
+router.post('/:id?', checkLogin, createOrUpdate)
+router.delete('/:id', checkLogin, remove)
+
+const checkLogin = (req, res, next) => {
+  if (!req.user) return res.status(503).send({error: 'Not logged in'})
+  next()
+}
+
+function read(req, res) {
+  return read({title: new RegExp(req.query.title + '.*', 'i')})
   .then(results => res.send(results))
   .catch(err => res.json({err, stack: err.stack}))
-})
+}
 
-router.put('/', (req, res) => {
+function createOrUpdate(req, res) {
   let {title, genre, description, photo} = req.body;
+  let id = req.params.id;
+  createOrUpdate({id, title, genre, description, photo})
+    .then(results =>  res.send({message: 'Successfully updated/inserted book', results}))
+    .catch(err =>     res.json({err, stack: err.stack}))
+}
 
-  return knex('book')
-  .returning('id')
-  .insert({title, genre, description, photo})
-  .then(ids =>  res.send({message: 'Successfully created book', results: ids}))
-  .catch(err => res.json({err, stack: err.stack}))
-})
-
-router.post('/:id', (req, res) => {
-  let {title, genre, description, photo} = req.body;
-
-  return knex('book')
-  .where('id', req.params.id)
-  .update({title, genre, description, photo})
-  .then(results =>  res.send({message: 'Successfully updated book', results}))
+function remove(req, res) {
+  remove({id: req.params.id})
+  .then(results =>  res.send({message: 'Deleted!'}))
   .catch(err =>     res.json({err, stack: err.stack}))
-})
+}
 
-router.delete('/:id', (req, res) => {
-  return knex('book')
-  .where('id', req.params.id)
-  .then(results =>  res.send(results))
-  .catch(err =>     res.json({err, stack: err.stack}))
-})
 
